@@ -23,28 +23,28 @@
       -webkit-justify-content: center;
       justify-content: center;
       min-height: 100%;
-      padding: 40px 20px;
+      padding: 20px;
     }
 
     #widget {
       background: #565a47;
       border-radius: 0;
-      padding: 14px 28px;
+      padding: 8px 3px 8px 10px;
       display: -webkit-inline-flex;
       display: inline-flex;
       -webkit-align-items: center;
       align-items: center;
       -webkit-justify-content: center;
       justify-content: center;
-      min-width: 270px;
-      height: 50px;
+      min-width: 0;
     }
 
     #clock-text {
       color: #f0ede6;
-      font-size: 22px;
-      font-weight: 400;
-      letter-spacing: 1px;
+      font-size: 25px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0;
       white-space: nowrap;
     }
 
@@ -130,7 +130,7 @@
 
     function getTimeString(date) {
       return (date.getMonth() + 1) + '月' + date.getDate() + '日 ' +
-             DAYS[date.getDay()] + ' ' +
+             DAYS[date.getDay()] + '\u2003' +
              pad(date.getHours()) + ':' + pad(date.getMinutes());
     }
 
@@ -144,7 +144,11 @@
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     function renderToBlob(callback) {
-      var W = 540, H = 120;
+      var timeStr = getTimeString(new Date());
+
+      var W = 302;
+      var H = 60;
+
       var canvas = document.createElement('canvas');
       canvas.width = W;
       canvas.height = H;
@@ -154,10 +158,10 @@
       ctx.fillRect(0, 0, W, H);
 
       ctx.fillStyle = '#f0ede6';
-      ctx.font = '44px -apple-system, PingFangSC-Regular, "Hiragino Sans GB", sans-serif';
-      ctx.textAlign = 'center';
+      ctx.font = '400 26px -apple-system, "PingFang SC", "Hiragino Sans GB", sans-serif';
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(getTimeString(new Date()), W / 2, H / 2);
+      ctx.fillText(timeStr, 16, H / 2);
 
       canvas.toBlob(function(blob) { callback(blob, canvas); }, 'image/png');
     }
