@@ -28,7 +28,7 @@
 
     #widget {
       background: #565a47;
-      border-radius: 6px;
+      border-radius: 0;
       padding: 14px 28px;
       display: -webkit-inline-flex;
       display: inline-flex;
@@ -42,7 +42,7 @@
 
     #clock-text {
       color: #f0ede6;
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 400;
       letter-spacing: 1px;
       white-space: nowrap;
@@ -144,29 +144,17 @@
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
     function renderToBlob(callback) {
-      var W = 540, H = 100;
+      var W = 540, H = 120;
       var canvas = document.createElement('canvas');
       canvas.width = W;
       canvas.height = H;
       var ctx = canvas.getContext('2d');
 
-      var r = 12;
       ctx.fillStyle = '#565a47';
-      ctx.beginPath();
-      ctx.moveTo(r, 0);
-      ctx.lineTo(W - r, 0);
-      ctx.arcTo(W, 0, W, r, r);
-      ctx.lineTo(W, H - r);
-      ctx.arcTo(W, H, W - r, H, r);
-      ctx.lineTo(r, H);
-      ctx.arcTo(0, H, 0, H - r, r);
-      ctx.lineTo(0, r);
-      ctx.arcTo(0, 0, r, 0, r);
-      ctx.closePath();
-      ctx.fill();
+      ctx.fillRect(0, 0, W, H);
 
       ctx.fillStyle = '#f0ede6';
-      ctx.font = '36px -apple-system, PingFangSC-Regular, "Hiragino Sans GB", sans-serif';
+      ctx.font = '44px -apple-system, PingFangSC-Regular, "Hiragino Sans GB", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(getTimeString(new Date()), W / 2, H / 2);
