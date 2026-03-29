@@ -63,12 +63,12 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* iOS 长按保存遮罩 */
+    /* iOS 长按保存遮罩（降级方案） */
     #overlay {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.82);
       z-index: 999;
       -webkit-flex-direction: column;
       flex-direction: column;
@@ -126,39 +126,30 @@
   <script>
     var DAYS = ['周日','周一','周二','周三','周四','周五','周六'];
 
-    function pad(n) {
-      return n < 10 ? '0' + n : '' + n;
-    }
+    function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
     function getTimeString(date) {
-      var m   = date.getMonth() + 1;
-      var d   = date.getDate();
-      var day = DAYS[date.getDay()];
-      var h   = pad(date.getHours());
-      var min = pad(date.getMinutes());
-      return m + '月' + d + '日 ' + day + ' ' + h + ':' + min;
+      return (date.getMonth() + 1) + '月' + date.getDate() + '日 ' +
+             DAYS[date.getDay()] + ' ' +
+             pad(date.getHours()) + ':' + pad(date.getMinutes());
     }
 
     function tick() {
       var el = document.getElementById('clock-text');
       if (el) el.textContent = getTimeString(new Date());
     }
-
     tick();
     setInterval(tick, 1000);
 
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
-    function saveImage() {
-      var timeStr = getTimeString(new Date());
+    function renderToBlob(callback) {
       var W = 540, H = 100;
-
       var canvas = document.createElement('canvas');
-      canvas.width  = W;
+      canvas.width = W;
       canvas.height = H;
       var ctx = canvas.getContext('2d');
 
-      // 背景圆角矩形
       var r = 12;
       ctx.fillStyle = '#565a47';
       ctx.beginPath();
@@ -174,26 +165,43 @@
       ctx.closePath();
       ctx.fill();
 
-      // 文字
       ctx.fillStyle = '#f0ede6';
       ctx.font = '36px -apple-system, PingFangSC-Regular, "Hiragino Sans GB", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(timeStr, W / 2, H / 2);
+      ctx.fillText(getTimeString(new Date()), W / 2, H / 2);
 
-      var dataURL = canvas.toDataURL('image/png');
+      canvas.toBlob(function(blob) { callback(blob, canvas); }, 'image/png');
+    }
 
-      if (isIOS) {
-        document.getElementById('overlay-img').src = dataURL;
+    function saveImage() {
+      renderToBlob(function(blob, canvas) {
+        // 优先：Web Share API（iOS 15+ 可直接分享到相册）
+        if (navigator.share && navigator.canShare) {
+          var file = new File([blob], 'clock.png', { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file] }).catch(function() {});
+            return;
+          }
+        }
+
+        // Android / 桌面：直接下载
+        if (!isIOS) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'clock.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          return;
+        }
+
+        // iOS 降级：弹出图片让用户长按保存
+        document.getElementById('overlay-img').src = canvas.toDataURL('image/png');
         document.getElementById('overlay').classList.add('show');
-      } else {
-        var a = document.createElement('a');
-        a.href = dataURL;
-        a.download = 'clock.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
+      });
     }
 
     function closeOverlay(e) {
