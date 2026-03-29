@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>时间挂件</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      background: #2e3124;
+      font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    body {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      min-height: 100%;
+      padding: 40px 20px;
+    }
+
+    #widget {
+      background: #565a47;
+      border-radius: 6px;
+      padding: 14px 28px;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      min-width: 270px;
+      height: 50px;
+    }
+
+    #clock-text {
+      color: #f0ede6;
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    #save-btn {
+      display: block;
+      margin-top: 24px;
+      background: rgba(240, 237, 230, 0.12);
+      border: 1px solid rgba(240, 237, 230, 0.3);
+      color: #f0ede6;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* iOS 长按保存遮罩 */
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 999;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+    #overlay.show { display: -webkit-flex; display: flex; }
+
+    #overlay-img {
+      max-width: 80vw;
+      border-radius: 8px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    #overlay p {
+      color: #f0ede6;
+      font-size: 15px;
+      margin-top: 16px;
+      line-height: 1.7;
+    }
+
+    #overlay-close {
+      margin-top: 16px;
+      background: rgba(240,237,230,0.15);
+      border: 1px solid rgba(240,237,230,0.3);
+      color: #f0ede6;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 32px;
+      border-radius: 6px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="widget">
+    <span id="clock-text">--月--日 周- --:--</span>
+  </div>
+
+  <button id="save-btn" onclick="saveImage()">保存到相册</button>
+
+  <div id="overlay" onclick="closeOverlay(event)">
+    <img id="overlay-img" src="" alt="">
+    <p>长按上方图片<br>选择「存储到相册」</p>
+    <button id="overlay-close" onclick="document.getElementById('overlay').classList.remove('show')">关闭</button>
+  </div>
+
+  <script>
+    var DAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
+    function pad(n) {
+      return n < 10 ? '0' + n : '' + n;
+    }
+
+    function getTimeString(date) {
+      var m   = date.getMonth() + 1;
+      var d   = date.getDate();
+      var day = DAYS[date.getDay()];
+      var h   = pad(date.getHours());
+      var min = pad(date.getMinutes());
+      return m + '月' + d + '日 ' + day + ' ' + h + ':' + min;
+    }
+
+    function tick() {
+      var el = document.getElementById('clock-text');
+      if (el) el.textContent = getTimeString(new Date());
+    }
+
+    tick();
+    setInterval(tick, 1000);
+
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    function saveImage() {
+      var timeStr = getTimeString(new Date());
+      var W = 540, H = 100;
+
+      var canvas = document.createElement('canvas');
+      canvas.width  = W;
+      canvas.height = H;
+      var ctx = canvas.getContext('2d');
+
+      // 背景圆角矩形
+      var r = 12;
+      ctx.fillStyle = '#565a47';
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(W - r, 0);
+      ctx.arcTo(W, 0, W, r, r);
+      ctx.lineTo(W, H - r);
+      ctx.arcTo(W, H, W - r, H, r);
+      ctx.lineTo(r, H);
+      ctx.arcTo(0, H, 0, H - r, r);
+      ctx.lineTo(0, r);
+      ctx.arcTo(0, 0, r, 0, r);
+      ctx.closePath();
+      ctx.fill();
+
+      // 文字
+      ctx.fillStyle = '#f0ede6';
+      ctx.font = '36px -apple-system, PingFangSC-Regular, "Hiragino Sans GB", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(timeStr, W / 2, H / 2);
+
+      var dataURL = canvas.toDataURL('image/png');
+
+      if (isIOS) {
+        document.getElementById('overlay-img').src = dataURL;
+        document.getElementById('overlay').classList.add('show');
+      } else {
+        var a = document.createElement('a');
+        a.href = dataURL;
+        a.download = 'clock.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    }
+
+    function closeOverlay(e) {
+      if (e.target === document.getElementById('overlay')) {
+        document.getElementById('overlay').classList.remove('show');
+      }
+    }
+  </script>
+</body>
+</html>
